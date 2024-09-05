@@ -252,6 +252,8 @@ fn contract_repo_path(full_path: &Path, top_level_path: &Path) -> Option<String>
     for (i, ancestor) in full_path.ancestors().enumerate() {
         let ancestor_real_path = real_path(ancestor);
         let idx;
+        log::debug!("ancestor: {:?} {:?}", i, ancestor);
+        log::debug!("ancestor_rp: {:?}", ancestor_real_path);
 
         if is_symlink && ancestor_real_path == ancestor {
             idx = i - 1;
@@ -267,7 +269,7 @@ fn contract_repo_path(full_path: &Path, top_level_path: &Path) -> Option<String>
             .as_os_str()
             .to_string_lossy();
 
-        if i == 0 {
+        if idx == 0 {
             return Some(repo_name.to_string());
         }
 
