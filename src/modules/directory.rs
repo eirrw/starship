@@ -244,17 +244,26 @@ fn contract_path<'a>(
 /// `top_level_replacement` by walking ancestors and comparing its real path.
 fn contract_repo_path(full_path: &Path, top_level_path: &Path) -> Option<String> {
     let top_level_real_path = real_path(top_level_path);
+    let is_symlink = full_path != real_path(full_path);
+
     // Walk ancestors to preserve logical path in `full_path`.
     // If we'd just `full_real_path.strip_prefix(top_level_real_path)`,
     // then it wouldn't preserve logical path. It would've returned physical path.
     for (i, ancestor) in full_path.ancestors().enumerate() {
         let ancestor_real_path = real_path(ancestor);
-        if ancestor_real_path != top_level_real_path {
-            continue;
+        let idx;
+
+        if is_symlink && ancestor_real_path == ancestor {
+            idx = i - 1;
+        } else {
+            if ancestor_real_path != top_level_real_path {
+                continue;
+            }
+            idx = i;
         }
 
         let components: Vec<_> = full_path.components().collect();
-        let repo_name = components[components.len() - i - 1]
+        let repo_name = components[components.len() - idx - 1]
             .as_os_str()
             .to_string_lossy();
 
@@ -262,7 +271,7 @@ fn contract_repo_path(full_path: &Path, top_level_path: &Path) -> Option<String>
             return Some(repo_name.to_string());
         }
 
-        let path = PathBuf::from_iter(&components[components.len() - i..]);
+        let path = PathBuf::from_iter(&components[components.len() - idx..]);
         return Some(format!(
             "{repo_name}{separator}{path}",
             repo_name = repo_name,
